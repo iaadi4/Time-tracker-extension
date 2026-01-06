@@ -2,16 +2,17 @@
 
 A beautiful Chrome extension that tracks your time spent across all websites. Built with React, TypeScript, and Tailwind CSS.
 
-![Time Tracker Dashboard](https://via.placeholder.com/800x400?text=Time+Tracker+Dashboard)
+<img width="1861" height="958" alt="image" src="https://github.com/user-attachments/assets/ad3c1a00-2b6b-4094-870e-80953db9feb1" />
+
 
 ## Features
 
-- 📊 **Real-time Tracking** - Automatically tracks time spent on every website
-- 🎯 **Daily Focus Score** - See your total active time at a glance
-- 📈 **Visual Analytics** - Beautiful charts showing your browsing distribution
-- 🌙 **Dark Mode** - Easy on the eyes with a stunning dark theme
-- ⚡ **Lightweight** - Minimal resource usage with event-driven architecture
-- 🔒 **Privacy First** - All data stored locally, never sent to any server
+- *Real-time Tracking** - Automatically tracks time spent on every website
+- **Daily Focus Score** - See your total active time at a glance
+- **Visual Analytics** - Beautiful charts showing your browsing distribution
+- **Dark Mode** - Easy on the eyes with a stunning dark theme
+- **Lightweight** - Minimal resource usage with event-driven architecture
+- **Privacy First** - All data stored locally, never sent to any server
 
 ## Installation
 
@@ -60,26 +61,6 @@ Coming soon!
 - **Vite** - Build tool
 - **Recharts** - Data visualization
 - **Lucide React** - Icons
-
-## Project Structure
-
-```
-time-tracker-extension/
-├── public/
-│   └── manifest.json      # Chrome extension manifest
-├── src/
-│   ├── background/        # Service worker for tracking
-│   ├── popup/             # Popup widget UI
-│   ├── dashboard/         # Full dashboard UI
-│   ├── utils/             # Shared utilities
-│   │   ├── storage.ts     # Chrome storage helpers
-│   │   ├── format.ts      # Time formatting
-│   │   └── types.ts       # TypeScript types
-│   └── index.css          # Global styles
-├── popup.html             # Popup entry point
-├── dashboard.html         # Dashboard entry point
-└── vite.config.ts         # Vite configuration
-```
 
 ## Development
 
