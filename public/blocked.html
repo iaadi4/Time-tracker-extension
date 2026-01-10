@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Access Restricted | Time Tracker</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        background-color: #09090b;
+        color: #fff;
+        text-align: center;
+      }
+      .container {
+        max-width: 500px;
+        padding: 2rem;
+      }
+      .icon {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0 0 1rem;
+        background: linear-gradient(to right, #fff, #a1a1aa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      p {
+        color: #a1a1aa;
+        font-size: 1.125rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+      .domain-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-family: monospace;
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .btn {
+        display: inline-block;
+        padding: 0.75rem 2rem;
+        background: #fff;
+        color: #000;
+        text-decoration: none;
+        font-weight: 600;
+        border-radius: 0.75rem;
+        transition: opacity 0.2s;
+      }
+      .btn:hover {
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="icon">
+        <svg
+          width="40"
+          height="40"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="color: #ef4444"
+        >
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <h1>Time's Up!</h1>
+      <p>You have reached your daily limit.</p>
+    </div>
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const domain = params.get("domain");
+      const limitRaw = params.get("limit");
+
+      if (domain) {
+        document.getElementById("domain").textContent = domain;
+      }
+
+      if (limitRaw) {
+        const ms = parseInt(limitRaw);
+        const seconds = Math.floor((ms / 1000) % 60);
+        const minutes = Math.floor((ms / (1000 * 60)) % 60);
+        const hours = Math.floor(ms / (1000 * 60 * 60));
+
+        let timeString = "";
+        if (hours > 0) timeString += `${hours}h `;
+        if (minutes > 0 || hours > 0) timeString += `${minutes}m `;
+        if (seconds > 0 && hours === 0) timeString += `${seconds}s`; // Show seconds only if < 1h for brevity, or always? User asked "how time we reached". Let's keep it clean.
+
+        if (!timeString) timeString = "0m";
+
+        document.getElementById("limit-text").textContent = timeString.trim();
+      }
+    </script>
+  </body>
+</html>

@@ -4,7 +4,20 @@ export interface DailyData {
     favicon: string;
     lastVisited: number; // timestamp
     visitCount: number; // number of visits per day
+    notifications?: NotificationState;
   };
+}
+
+export interface NotificationState {
+  sent80: boolean;
+  sent100: boolean;
+}
+
+export interface Limit {
+  timeLimit: number; // in milliseconds
+  notify80: boolean;
+  notify100: boolean;
+  blockOnLimit: boolean;
 }
 
 export interface Settings {
@@ -15,7 +28,13 @@ export interface Settings {
 export interface StorageData {
   whitelist?: string[];
   settings?: Settings;
-  [dateKey: string]: DailyData | string[] | Settings | undefined;
+  limits?: { [domain: string]: Limit };
+  [dateKey: string]:
+    | DailyData
+    | string[]
+    | Settings
+    | { [domain: string]: Limit }
+    | undefined;
 }
 
 export interface AggregatedData {

@@ -12,7 +12,14 @@
  * - chrome.alarms: Periodic save every 1 minute
  */
 
-import { saveTime, getSettings, incrementVisitCount } from "../utils/storage";
+import {
+  saveTime,
+  getSettings,
+  incrementVisitCount,
+  getLimit,
+  getDailyUsage,
+  updateNotificationState,
+} from "../utils/storage";
 
 // Storage keys for tracking state (prefixed with _ to avoid conflicts)
 const STORAGE_KEYS = {
@@ -51,7 +58,7 @@ function getDomain(url: string): string | null {
   }
 
   try {
-    return new URL(url).hostname;
+    return new URL(url).hostname.replace(/^www\./, "");
   } catch {
     return null;
   }
@@ -66,6 +73,58 @@ function getFavicon(url: string): string {
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
   } catch {
     return "";
+  }
+}
+
+async function checkLimits(domain: string, timeToAdd = 0): Promise<void> {
+  const limit = await getLimit(domain);
+  if (!limit) return;
+
+  const usage = await getDailyUsage(domain);
+  const totalTime = usage.time + timeToAdd;
+
+  const is80Percent = totalTime >= limit.timeLimit * 0.8;
+  const is100Percent = totalTime >= limit.timeLimit;
+
+  // Check 80% notification
+  if (
+    limit.notify80 &&
+    is80Percent &&
+    !usage.notifications.sent80 &&
+    !is100Percent
+  ) {
+    chrome.notifications.create({
+      type: "basic",
+      iconUrl: "icon128.png",
+      title: "Time Tracker Alert",
+      message: `You have used 80% of your daily limit for ${domain}.`,
+    });
+    await updateNotificationState(domain, { sent80: true });
+  }
+
+  // Check 100% notification
+  if (limit.notify100 && is100Percent && !usage.notifications.sent100) {
+    chrome.notifications.create({
+      type: "basic",
+      iconUrl: "icon128.png",
+      title: "Time Tracker Alert",
+      message: `You have reached your daily limit for ${domain}.`,
+    });
+    await updateNotificationState(domain, { sent100: true });
+  }
+
+  // Block if limit reached and blocking enabled
+  if (limit.blockOnLimit && is100Percent) {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tab && tab.id && tab.url && getDomain(tab.url) === domain) {
+      const blockedUrl = chrome.runtime.getURL(
+        `blocked.html?domain=${domain}&limit=${limit.timeLimit}`
+      );
+      chrome.tabs.update(tab.id, { url: blockedUrl });
+    }
   }
 }
 
@@ -90,6 +149,7 @@ async function commitTime(): Promise<void> {
   // Only save if user spent at least the configured time on the site (and less than 5 minutes per event)
   if (domain && duration >= minDuration && duration <= 300000) {
     await saveTime(domain, duration, data._favicon || "");
+    await checkLimits(domain);
   }
 }
 
@@ -100,6 +160,25 @@ async function startTracking(url: string, trackVisit = false): Promise<void> {
   const domain = getDomain(url);
 
   if (domain) {
+    // Check limits immediately upon navigation
+    const limit = await getLimit(domain);
+    if (limit && limit.blockOnLimit) {
+      const usage = await getDailyUsage(domain);
+      if (usage.time >= limit.timeLimit) {
+        const blockedUrl = chrome.runtime.getURL(
+          `blocked.html?domain=${domain}&limit=${limit.timeLimit}`
+        );
+        const [tab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        if (tab && tab.id) {
+          chrome.tabs.update(tab.id, { url: blockedUrl });
+          return; // Do not start tracking if blocked
+        }
+      }
+    }
+
     // If this is a navigation to a new domain, increment visit count
     if (trackVisit) {
       const now = Date.now();
@@ -216,6 +295,21 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     ])) as TrackingState;
 
     if (data._currentUrl) {
+      const domain = getDomain(data._currentUrl);
+      if (domain) {
+        // Also check limits during periodic save for notifications (soft check)
+        // Calculate theoretical accumulated time since start
+        const startTime = (
+          (await chrome.storage.local.get(
+            STORAGE_KEYS.START_TIME
+          )) as TrackingState
+        )._startTime;
+        if (startTime) {
+          const currentDuration = Date.now() - startTime;
+          await checkLimits(domain, currentDuration);
+        }
+      }
+
       await chrome.storage.local.set({
         [STORAGE_KEYS.START_TIME]: Date.now(),
       });

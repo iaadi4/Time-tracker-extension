@@ -42,6 +42,8 @@ import {
 import { SiteAnalysisView } from "./components/SiteAnalysisView";
 import "../index.css";
 
+import { DailyLimitsView } from "./components/DailyLimitsView";
+
 export function Dashboard() {
   const [range, setRange] = useState<TimeRange>("today");
   const [data, setData] = useState<AggregatedData>({
@@ -55,11 +57,14 @@ export function Dashboard() {
   const [whitelist, setWhitelist] = useState<string[]>([]);
   const [newDomain, setNewDomain] = useState("");
   const [view, setView] = useState<
-    "dashboard" | "whitelist" | "settings" | "site-analysis"
+    "dashboard" | "whitelist" | "settings" | "site-analysis" | "limits"
   >(() => {
     const params = new URLSearchParams(window.location.search);
     const v = params.get("view");
-    return v === "whitelist" || v === "settings" || v === "site-analysis"
+    return v === "whitelist" ||
+      v === "settings" ||
+      v === "site-analysis" ||
+      v === "limits"
       ? v
       : "dashboard";
   });
@@ -270,6 +275,22 @@ export function Dashboard() {
             </div>
           )}
           <button
+            onClick={() => setView("limits")}
+            className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
+              view === "limits"
+                ? "bg-white/10 text-white shadow-inner"
+                : "text-neutral-400 hover:bg-white/5 hover:text-white"
+            } ${isSidebarCollapsed ? "justify-center" : ""}`}
+            title={isSidebarCollapsed ? "Daily Limits" : ""}
+          >
+            <Target
+              className={`w-5 h-5 flex-shrink-0 ${
+                view === "limits" ? "text-primary" : ""
+              }`}
+            />
+            {!isSidebarCollapsed && <span>Daily Limits</span>}
+          </button>
+          <button
             onClick={() => setView("whitelist")}
             className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
               view === "whitelist"
@@ -326,6 +347,7 @@ export function Dashboard() {
           <div>
             <h2 className="text-4xl font-black tracking-tight mb-1 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500">
               {view === "dashboard" && "Your Performance"}
+              {view === "limits" && "Daily Limits"}
               {view === "whitelist" && "Excluded Sites"}
               {view === "site-analysis" && "Site Analysis"}
               {view === "settings" && "Settings"}
@@ -336,6 +358,7 @@ export function Dashboard() {
                   "-",
                   " "
                 )}.`}
+              {view === "limits" && "Set daily time limits for distractions."}
               {view === "whitelist" && "Manage websites that won't be tracked."}
               {view === "settings" &&
                 "Configure how the extension tracks your time."}
@@ -568,6 +591,8 @@ export function Dashboard() {
             </div>
           </div>
         )}
+
+        {view === "limits" && <DailyLimitsView />}
 
         {view === "whitelist" && (
           <div className="space-y-6 pr-6">

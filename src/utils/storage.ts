@@ -453,3 +453,75 @@ export const getTrendMetrics = async (
     visitsChange,
   };
 };
+
+export const getLimit = async (
+  domain: string
+): Promise<import("./types").Limit | null> => {
+  const data = await getStorageData("limits");
+  const limits = data.limits || {};
+  return limits[domain] || null;
+};
+
+export const saveLimit = async (
+  domain: string,
+  limit: import("./types").Limit | null
+): Promise<void> => {
+  const data = await getStorageData("limits");
+  const limits = data.limits || {};
+
+  if (limit) {
+    limits[domain] = limit;
+  } else {
+    delete limits[domain];
+  }
+
+  await setStorageData({ limits });
+};
+
+export const updateNotificationState = async (
+  domain: string,
+  state: Partial<import("./types").NotificationState>
+): Promise<void> => {
+  return withLock(async () => {
+    const today = getTodayKey();
+    const data = await getStorageData(today);
+    const todayData: DailyData = (data[today] as DailyData) || {};
+
+    if (!todayData[domain]) return;
+
+    const currentState = todayData[domain].notifications || {
+      sent80: false,
+      sent100: false,
+    };
+
+    todayData[domain].notifications = { ...currentState, ...state };
+
+    await setStorageData({ [today]: todayData });
+  });
+};
+
+export const getDailyUsage = async (
+  domain: string
+): Promise<{
+  time: number;
+  notifications: import("./types").NotificationState;
+}> => {
+  const today = getTodayKey();
+  const data = await getStorageData(today);
+  const todayData: DailyData = (data[today] as DailyData) || {};
+
+  if (!todayData[domain]) {
+    return {
+      time: 0,
+      notifications: { sent80: false, sent100: false },
+    };
+  }
+
+  return {
+    time: todayData[domain].time,
+    notifications: todayData[domain].notifications || {
+      sent80: false,
+      sent100: false,
+    },
+  };
+};
