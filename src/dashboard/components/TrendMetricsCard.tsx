@@ -24,22 +24,22 @@ export const TrendMetricsCard: React.FC<TrendMetricsCardProps> = ({
       value: metrics.activeDays,
       subtext: "Days visited",
       icon: Calendar,
-      color: "text-red-400",
-      bg: "bg-red-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       label: "Max Daily Time",
       value: formatDuration(metrics.maxDailyTime),
       subtext: "Personal best",
       icon: Trophy,
-      color: "text-red-400",
-      bg: "bg-red-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       label: "Avg Daily Time",
       value: formatDuration(metrics.avgDailyTime),
       subtext: (
-        <span className="flex items-center gap-1 text-red-400">
+        <span className="flex items-center gap-1 text-primary">
           {metrics.timeChange >= 0 ? (
             <TrendingUp className="w-3 h-3" />
           ) : (
@@ -49,22 +49,22 @@ export const TrendMetricsCard: React.FC<TrendMetricsCardProps> = ({
         </span>
       ),
       icon: Clock,
-      color: "text-red-400",
-      bg: "bg-red-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       label: "Max Visits",
       value: metrics.maxDailyVisits,
       subtext: "Peak traffic",
       icon: Target,
-      color: "text-red-400",
-      bg: "bg-red-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
     {
       label: "Avg Visits",
       value: metrics.avgDailyVisits.toFixed(1),
       subtext: (
-        <span className="flex items-center gap-1 text-red-400">
+        <span className="flex items-center gap-1 text-primary">
           {metrics.visitsChange >= 0 ? (
             <TrendingUp className="w-3 h-3" />
           ) : (
@@ -74,8 +74,8 @@ export const TrendMetricsCard: React.FC<TrendMetricsCardProps> = ({
         </span>
       ),
       icon: Activity,
-      color: "text-red-400",
-      bg: "bg-red-500/10",
+      color: "text-primary",
+      bg: "bg-primary/10",
     },
   ];
 

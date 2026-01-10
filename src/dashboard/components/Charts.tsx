@@ -29,8 +29,16 @@ export const BrowsingTrendsChart: React.FC<ChartProps> = ({ data }) => {
           <AreaChart data={data}>
             <defs>
               <linearGradient id="colorTime" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                <stop
+                  offset="5%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity={0}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid
@@ -57,7 +65,7 @@ export const BrowsingTrendsChart: React.FC<ChartProps> = ({ data }) => {
             <Area
               type="monotone"
               dataKey="time"
-              stroke="#ef4444"
+              stroke="hsl(var(--primary))"
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorTime)"
@@ -80,8 +88,16 @@ export const VisitTrendsChart: React.FC<ChartProps> = ({ data }) => {
           <AreaChart data={data}>
             <defs>
               <linearGradient id="colorVisits" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                <stop
+                  offset="5%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity={0.8}
+                />
+                <stop
+                  offset="95%"
+                  stopColor="hsl(var(--primary))"
+                  stopOpacity={0}
+                />
               </linearGradient>
             </defs>
             <CartesianGrid
@@ -105,7 +121,7 @@ export const VisitTrendsChart: React.FC<ChartProps> = ({ data }) => {
             <Area
               type="monotone"
               dataKey="visits"
-              stroke="#f97316"
+              stroke="hsl(var(--primary))"
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorVisits)"

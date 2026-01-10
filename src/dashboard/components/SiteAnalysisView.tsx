@@ -97,7 +97,7 @@ export const SiteAnalysisView: React.FC<SiteAnalysisViewProps> = ({
                   href={`https://${domain}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors"
+                  className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
                 >
                   Visit Site <ExternalLink className="w-3 h-3" />
                 </a>
@@ -161,7 +161,7 @@ export const SiteAnalysisView: React.FC<SiteAnalysisViewProps> = ({
             <div className="text-3xl font-bold text-white mb-2">
               {formatDuration(trendMetrics?.totalTime || 0)}
             </div>
-            <div className="text-xs font-medium text-red-400">
+            <div className="text-xs font-medium text-primary">
               {trendMetrics?.timeChange && trendMetrics.timeChange > 0
                 ? "+"
                 : ""}
@@ -180,7 +180,7 @@ export const SiteAnalysisView: React.FC<SiteAnalysisViewProps> = ({
             <div className="text-3xl font-bold text-white mb-2">
               {trendMetrics?.totalVisits}
             </div>
-            <div className="text-xs font-medium text-red-400">
+            <div className="text-xs font-medium text-primary">
               {trendMetrics?.visitsChange && trendMetrics.visitsChange > 0
                 ? "+"
                 : ""}

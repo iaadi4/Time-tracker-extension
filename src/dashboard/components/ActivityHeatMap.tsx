@@ -42,13 +42,13 @@ export const ActivityHeatMap: React.FC<ActivityHeatMapProps> = ({ data }) => {
       case 0:
         return "bg-white/5";
       case 1:
-        return "bg-red-500/20";
+        return "bg-primary/20";
       case 2:
-        return "bg-red-500/40";
+        return "bg-primary/40";
       case 3:
-        return "bg-red-500/70";
+        return "bg-primary/70";
       case 4:
-        return "bg-red-500";
+        return "bg-primary";
       default:
         return "bg-transparent"; // Placeholder
     }

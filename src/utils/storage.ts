@@ -37,6 +37,7 @@ const withLock = async <T>(fn: () => Promise<T>): Promise<T> => {
 
 const DEFAULT_SETTINGS: Settings = {
   trackingDelaySeconds: 15,
+  theme: "blue-500", // Default to blue-500 which matches the original primary color
 };
 
 export const getTodayKey = (): string => {

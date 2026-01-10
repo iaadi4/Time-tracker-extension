@@ -9,6 +9,7 @@ export interface DailyData {
 
 export interface Settings {
   trackingDelaySeconds: number; // 1-100, default 15
+  theme: string; // Theme color name (e.g. "red-500")
 }
 
 export interface StorageData {

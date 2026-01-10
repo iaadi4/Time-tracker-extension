@@ -42,15 +42,6 @@ import {
 import { SiteAnalysisView } from "./components/SiteAnalysisView";
 import "../index.css";
 
-const COLORS = [
-  "#f87171",
-  "#fb923c",
-  "#fbbf24",
-  "#f472b6",
-  "#e879f9",
-  "#c084fc",
-];
-
 export function Dashboard() {
   const [range, setRange] = useState<TimeRange>("today");
   const [data, setData] = useState<AggregatedData>({
@@ -87,9 +78,59 @@ export function Dashboard() {
     }`;
     window.history.replaceState(null, "", newUrl);
   }, [view, selectedDomain]);
+
   const [trackingDelay, setTrackingDelay] = useState(15);
+  const [currentThemeId, setCurrentThemeId] = useState("blue-500");
+  const [currentThemeName, setCurrentThemeName] = useState("Blue");
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  // Lazy load themes to avoid circular dependencies
+  const [themes, setThemes] = useState<import("../utils/themes").Theme[]>([]);
+  useEffect(() => {
+    import("../utils/themes").then(({ THEMES }) => setThemes(THEMES));
+  }, []);
+
+  // Theme-based colors for charts (varied hues for distinction)
+  const getThemeColors = () => {
+    const activeTheme = themes.find((t) => t.id === currentThemeId);
+    if (!activeTheme)
+      return [
+        "hsl(var(--primary))",
+        "hsl(var(--primary))",
+        "hsl(var(--primary))",
+        "hsl(var(--primary))",
+        "hsl(var(--primary))",
+        "hsl(var(--primary))",
+      ];
+
+    // Parse HSL from the theme string "H S% L%"
+    const [h, s, l] = activeTheme.primary.split(" ").map((v) => parseFloat(v));
+
+    // Generate variations by rotating hue and adjusting lightness
+    return [
+      `hsl(${h} ${s}% ${l}%)`, // Base
+      `hsl(${(h + 30) % 360} ${s}% ${l}%)`, // Analogous 1
+      `hsl(${(h + 60) % 360} ${s}% ${l}%)`, // Analogous 2
+      `hsl(${(h + 150) % 360} ${s}% ${l}%)`, // Complementaryish
+      `hsl(${(h + 180) % 360} ${s}% ${l}%)`, // Complementary
+      `hsl(${(h + 210) % 360} ${s}% ${l}%)`, // Triadic
+      `hsl(${(h + 270) % 360} ${s}% ${l}%)`, // Tetradic
+      `hsl(${(h + 330) % 360} ${s}% ${l}%)`, // Analogous 3
+    ];
+  };
+
+  const applyTheme = (themeId: string) => {
+    import("../utils/themes").then(({ THEMES }) => {
+      const theme = THEMES.find((t) => t.id === themeId);
+      if (theme) {
+        const root = document.documentElement;
+        root.style.setProperty("--primary", theme.primary);
+        root.style.setProperty("--ring", theme.ring);
+        setCurrentThemeName(theme.name);
+      }
+    });
+  };
 
   const fetchData = async () => {
     const result = await getAggregatedData(range);
@@ -103,6 +144,10 @@ export function Dashboard() {
   const fetchSettings = async () => {
     const settingsData = await getSettings();
     setTrackingDelay(settingsData.trackingDelaySeconds);
+    if (settingsData.theme) {
+      setCurrentThemeId(settingsData.theme);
+      applyTheme(settingsData.theme);
+    }
   };
 
   useEffect(() => {
@@ -130,7 +175,20 @@ export function Dashboard() {
   };
 
   const handleSaveSettings = async () => {
-    await setSettings({ trackingDelaySeconds: trackingDelay });
+    await setSettings({
+      trackingDelaySeconds: trackingDelay,
+      theme: currentThemeId,
+    });
+  };
+
+  const handleThemeChange = (themeId: string) => {
+    setCurrentThemeId(themeId);
+    applyTheme(themeId);
+    // Auto-save theme preference for better UX
+    setSettings({
+      trackingDelaySeconds: trackingDelay,
+      theme: themeId,
+    });
   };
 
   const navItems = [
@@ -142,8 +200,10 @@ export function Dashboard() {
 
   const toggleSidebar = () => setIsSidebarCollapsed(!isSidebarCollapsed);
 
+  const THEME_COLORS = getThemeColors();
+
   return (
-    <div className="h-screen bg-black text-white font-sans flex relative overflow-hidden selection:bg-red-500/30">
+    <div className="h-screen bg-black text-white font-sans flex relative overflow-hidden selection:bg-primary/30">
       <aside
         className={`${
           isSidebarCollapsed ? "w-20" : "w-72"
@@ -155,8 +215,8 @@ export function Dashboard() {
           }`}
         >
           <img
-            src="/icon128.png"
-            className="w-10 h-10 rounded-xl shadow-lg shadow-red-500/20 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+            src="/icon_white.png"
+            className="w-10 h-10 flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity rounded-lg"
             alt="Logo"
             onClick={toggleSidebar}
             title="Toggle Sidebar"
@@ -194,7 +254,7 @@ export function Dashboard() {
               <item.icon
                 className={`w-5 h-5 flex-shrink-0 ${
                   range === item.id && view === "dashboard"
-                    ? "text-red-400"
+                    ? "text-primary"
                     : ""
                 }`}
               />
@@ -220,7 +280,7 @@ export function Dashboard() {
           >
             <Shield
               className={`w-5 h-5 flex-shrink-0 ${
-                view === "whitelist" ? "text-red-400" : ""
+                view === "whitelist" ? "text-primary" : ""
               }`}
             />
             {!isSidebarCollapsed && <span>Excluded Sites</span>}
@@ -236,7 +296,7 @@ export function Dashboard() {
           >
             <SettingsIcon
               className={`w-5 h-5 flex-shrink-0 ${
-                view === "settings" ? "text-red-400" : ""
+                view === "settings" ? "text-primary" : ""
               }`}
             />
             {!isSidebarCollapsed && <span>Settings</span>}
@@ -247,14 +307,14 @@ export function Dashboard() {
           onClick={toggleSidebar}
           className={`mt-auto w-full flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
             isSidebarCollapsed
-              ? "justify-center text-red-400 hover:bg-white/5"
+              ? "justify-center text-primary hover:bg-white/5"
               : "text-neutral-400 hover:bg-white/5 hover:text-white"
           }`}
           title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
           <PanelLeft
             className={`w-5 h-5 flex-shrink-0 ${
-              isSidebarCollapsed ? "text-red-400" : ""
+              isSidebarCollapsed ? "text-primary" : ""
             }`}
           />
           {!isSidebarCollapsed && <span>Collapse Sidebar</span>}
@@ -302,7 +362,7 @@ export function Dashboard() {
           <div className="flex-1 flex flex-col min-h-0 space-y-6 pb-2 pr-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative overflow-hidden">
-                <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-2">
                   <Clock className="w-3.5 h-3.5" />
                   Total Browsing
                 </h3>
@@ -312,7 +372,7 @@ export function Dashboard() {
               </div>
 
               <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative overflow-hidden">
-                <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-2">
                   <Activity className="w-3.5 h-3.5" />
                   {range === "today" ? "Avg Per Site" : "Daily Average"}
                 </h3>
@@ -328,7 +388,7 @@ export function Dashboard() {
               </div>
 
               <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative overflow-hidden">
-                <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-2">
                   <Target className="w-3.5 h-3.5" />
                   Most Visited
                 </h3>
@@ -343,7 +403,7 @@ export function Dashboard() {
               </div>
 
               <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group relative overflow-hidden">
-                <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-2">
                   <TrendingUp className="w-3.5 h-3.5" />
                   Unique Sites
                 </h3>
@@ -354,13 +414,13 @@ export function Dashboard() {
             </div>
 
             {range !== "today" && insights.mostActiveDay && (
-              <div className="p-5 rounded-2xl bg-gradient-to-r from-red-900/20 to-rose-900/20 border border-red-500/10 flex items-center justify-between">
+              <div className="p-5 rounded-2xl bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/10 flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-xl bg-red-500/20 text-red-400">
+                  <div className="p-3 rounded-xl bg-primary/20 text-primary">
                     <BarChart3 className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-red-200">
+                    <div className="text-sm font-semibold text-primary/80">
                       Most Active Day
                     </div>
                     <div className="text-white font-bold text-lg">
@@ -387,12 +447,10 @@ export function Dashboard() {
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
-                          data={data.byDomain
-                            .slice(0, 8)
-                            .map((d) => ({
-                              ...d,
-                              domain: formatDomain(d.domain),
-                            }))}
+                          data={data.byDomain.slice(0, 8).map((d) => ({
+                            ...d,
+                            domain: formatDomain(d.domain),
+                          }))}
                           dataKey="time"
                           nameKey="domain"
                           cx="50%"
@@ -405,7 +463,7 @@ export function Dashboard() {
                           {data.byDomain.slice(0, 8).map((_, index) => (
                             <Cell
                               key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
+                              fill={THEME_COLORS[index % THEME_COLORS.length]}
                             />
                           ))}
                         </Pie>
@@ -439,7 +497,10 @@ export function Dashboard() {
                       >
                         <div
                           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: COLORS[i % COLORS.length] }}
+                          style={{
+                            backgroundColor:
+                              THEME_COLORS[i % THEME_COLORS.length],
+                          }}
                         ></div>
                         <span
                           className="truncate text-neutral-300 font-medium"
@@ -468,7 +529,7 @@ export function Dashboard() {
                       className="group flex items-center justify-between p-4 rounded-xl hover:bg-white/5 transition-all duration-200 border border-transparent hover:border-white/5 cursor-pointer"
                     >
                       <div className="flex items-center gap-4 overflow-hidden flex-1">
-                        <span className="text-xs font-mono text-neutral-600 w-6 group-hover:text-red-500 transition-colors flex-shrink-0">
+                        <span className="text-xs font-mono text-neutral-600 w-6 group-hover:text-primary transition-colors flex-shrink-0">
                           {index + 1}
                         </span>
                         <img
@@ -485,7 +546,7 @@ export function Dashboard() {
                           </span>
                           <div className="h-1.5 w-full bg-neutral-800 rounded-full mt-2 overflow-hidden">
                             <div
-                              className="h-full bg-gradient-to-r from-red-600 to-rose-600 rounded-full"
+                              className="h-full bg-gradient-to-r from-primary to-primary/80 rounded-full transition-all"
                               style={{
                                 width: `${Math.min(
                                   (site.time / (data.byDomain[0]?.time || 1)) *
@@ -497,7 +558,7 @@ export function Dashboard() {
                           </div>
                         </div>
                       </div>
-                      <span className="text-sm font-mono font-bold text-neutral-500 group-hover:text-red-400 transition-colors whitespace-nowrap ml-4">
+                      <span className="text-sm font-mono font-bold text-neutral-500 group-hover:text-primary transition-colors whitespace-nowrap ml-4">
                         {formatDurationLong(site.time)}
                       </span>
                     </div>
@@ -512,7 +573,7 @@ export function Dashboard() {
           <div className="space-y-6 pr-6">
             <div className="p-8 rounded-2xl bg-white/5 border border-white/5">
               <h3 className="text-lg font-bold mb-2 text-neutral-200 flex items-center gap-2">
-                <Shield className="w-5 h-5 text-red-400" />
+                <Shield className="w-5 h-5 text-primary" />
                 Excluded Domains
               </h3>
               <p className="text-sm text-neutral-400 mb-6">
@@ -525,12 +586,12 @@ export function Dashboard() {
                   value={newDomain}
                   onChange={(e) => setNewDomain(e.target.value)}
                   placeholder="example.com"
-                  className="flex-1 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-red-500/50 transition-colors placeholder:text-neutral-600"
+                  className="flex-1 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary/50 transition-colors placeholder:text-neutral-600"
                 />
                 <button
                   type="submit"
                   disabled={!newDomain}
-                  className="bg-red-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   <Plus className="w-5 h-5" />
                   Add Domain
@@ -542,14 +603,14 @@ export function Dashboard() {
               {whitelist.map((domain) => (
                 <div
                   key={domain}
-                  className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-red-500/30 transition-colors"
+                  className="p-4 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between group hover:border-primary/30 transition-colors"
                 >
                   <span className="font-medium text-neutral-300">
                     {formatDomain(domain)}
                   </span>
                   <button
                     onClick={() => handleRemoveWhitelist(domain)}
-                    className="p-2 rounded-lg text-neutral-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    className="p-2 rounded-lg text-neutral-500 hover:text-primary hover:bg-primary/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -568,7 +629,7 @@ export function Dashboard() {
           <div className="space-y-6 pr-6">
             <div className="p-8 rounded-2xl bg-white/5 border border-white/5">
               <h3 className="text-lg font-bold mb-2 text-neutral-200 flex items-center gap-2">
-                <SettingsIcon className="w-5 h-5 text-red-400" />
+                <SettingsIcon className="w-5 h-5 text-primary" />
                 Tracking Delay
               </h3>
               <p className="text-sm text-neutral-400 mb-6">
@@ -589,15 +650,86 @@ export function Dashboard() {
                     );
                     setTrackingDelay(val);
                   }}
-                  className="w-24 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-center focus:outline-none focus:border-red-500/50 transition-colors"
+                  className="w-24 bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-center focus:outline-none focus:border-primary/50 transition-colors"
                 />
                 <span className="text-neutral-400">seconds</span>
                 <button
                   onClick={handleSaveSettings}
-                  className="bg-red-500 text-white font-bold px-6 py-3 rounded-xl hover:bg-red-400 transition-colors flex items-center gap-2 ml-auto"
+                  className="bg-primary text-primary-foreground font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity flex items-center gap-2 ml-auto"
                 >
                   Save
                 </button>
+              </div>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-white/5 border border-white/5">
+              <div className="flex flex-col lg:flex-row gap-8 items-start">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold mb-2 text-neutral-200 flex items-center gap-2">
+                    <LayoutGrid className="w-5 h-5 text-primary" />
+                    Appearance
+                  </h3>
+                  <p className="text-sm text-neutral-400 mb-6">
+                    Customize the look and feel of the extension.
+                  </p>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-semibold text-neutral-300">
+                        Accent Color
+                      </div>
+                      <div className="text-xs font-mono text-primary bg-primary/10 px-2 py-1 rounded">
+                        {currentThemeName}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-4">
+                      {themes.map((theme) => (
+                        <button
+                          key={theme.id}
+                          onClick={() => handleThemeChange(theme.id)}
+                          className={`
+                          w-10 h-10 rounded-full cursor-pointer transition-all flex items-center justify-center relative group
+                          ${theme.color}
+                          ${
+                            currentThemeId === theme.id
+                              ? "ring-2 ring-white ring-offset-2 ring-offset-black scale-110 shadow-lg shadow-white/10"
+                              : "hover:scale-110 opacity-70 hover:opacity-100"
+                          }
+                        `}
+                          title={theme.name}
+                        >
+                          {currentThemeId === theme.id && (
+                            <div className="w-2.5 h-2.5 bg-white rounded-full shadow-sm" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview Card */}
+                <div className="w-full lg:w-72 shrink-0 lg:mt-0">
+                  <div className="text-xs font-semibold text-neutral-500 mb-2 uppercase tracking-wider">
+                    Preview
+                  </div>
+                  <div className="p-5 rounded-2xl bg-white/5 border border-white/5 relative overflow-hidden">
+                    <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2 flex items-center gap-2">
+                      <Activity className="w-3.5 h-3.5" />
+                      Daily Average
+                    </h3>
+                    <div className="text-2xl font-bold text-white tracking-tight mb-4">
+                      2h 45m
+                    </div>
+
+                    <div className="h-1.5 w-full bg-neutral-800 rounded-full overflow-hidden mb-4">
+                      <div className="h-full bg-primary w-2/3 rounded-full"></div>
+                    </div>
+
+                    <button className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:opacity-90 transition-opacity">
+                      View Details
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
